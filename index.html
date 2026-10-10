@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Teleconsultorias Offline – Núcleo UFOPA</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=Public+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f2f5f1;--card:#fff;--ink:#12302b;--mut:#5d716c;--line:#dbe4df;--a:#0f6b6b;--b:#6a4378;--c:#c98a1b;--d:#b5473a;--track:#e8eeea;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1c19;--card:#152824;--ink:#e6f0ec;--mut:#93aaa3;--line:#244039;--a:#3fb3a8;--b:#b48ac6;--c:#e2ab45;--d:#e07a6c;--track:#1d3530}}
+:root[data-theme="dark"]{--bg:#0e1c19;--card:#152824;--ink:#e6f0ec;--mut:#93aaa3;--line:#244039;--a:#3fb3a8;--b:#b48ac6;--c:#e2ab45;--d:#e07a6c;--track:#1d3530}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 'Public Sans',system-ui,sans-serif}
+main{max-width:1120px;margin:0 auto;padding:24px 16px 40px}
+h1,h2,.big{font-family:'Bricolage Grotesque',system-ui,sans-serif}
+h1{font-size:clamp(26px,4vw,38px);margin:0 0 4px;line-height:1.1}
+.sub{color:var(--mut);margin:0 0 20px}
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+select{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;min-width:180px}
+select:focus-visible,button:focus-visible{outline:2px solid var(--a);outline-offset:2px}
+button{background:none;color:var(--a);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font:inherit;cursor:pointer}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:12px}
+.k{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.k .big{font-size:32px;font-weight:700;line-height:1.1}
+.k span{color:var(--mut);font-size:13px}
+.k.hero{grid-column:span 2;background:var(--a);color:#fff;border:0}
+.k.hero span{color:#d6efec}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}
+h2{font-size:17px;margin:0 0 12px}
+.row{display:grid;grid-template-columns:minmax(90px,38%) 1fr 34px;gap:8px;align-items:center;margin:6px 0;font-size:13.5px}
+.row .t{background:var(--track);border-radius:4px;height:14px;overflow:hidden}
+.row i{display:block;height:100%;border-radius:4px}
+.row b{text-align:right;font-weight:600}
+.row .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cols{display:flex;align-items:flex-end;gap:8px;height:170px;padding-top:8px;overflow-x:auto}
+.col{flex:1;min-width:44px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;font-size:12px}
+.col i{width:100%;background:var(--a);border-radius:4px 4px 0 0}
+.col small{color:var(--mut);margin-top:4px}
+.donut{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.ring{width:120px;height:120px;border-radius:50%;flex:none;position:relative}
+.ring::after{content:"";position:absolute;inset:26px;background:var(--card);border-radius:50%}
+.leg div{font-size:13.5px;margin:3px 0}.leg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px}
+.empty{color:var(--mut)}
+.note{color:var(--mut);font-size:12.5px;margin-top:16px}
+.row[data-f],.col[data-f]{cursor:pointer}.row[data-f]:hover .n,.col[data-f]:hover small{text-decoration:underline}.msg{font-size:13px;color:var(--mut);margin:-6px 0 14px}.msg.err{color:var(--d)}
+@media(max-width:560px){.k.hero{grid-column:span 1}}
+</style></head><body><main>
+<h1>Teleconsultorias Offline</h1>
+<p class="sub">Núcleo UFOPA · solicitações de unidades de saúde do Pará · <span id="per"></span></p>
+<div class="filters">
+<select id="fm" aria-label="Município"></select>
+<select id="fe" aria-label="Especialidade"></select>
+<select id="fp" aria-label="Período"></select>
+<button id="rs">Limpar filtros</button>
+<button id="up">Substituir dados…</button><button id="ad">Adicionar planilha…</button><button id="rd">Limpar dados</button>
+<input type="file" id="f1" accept=".xlsx,.xls,.csv" hidden><input type="file" id="f2" accept=".xlsx,.xls,.csv" hidden>
+</div>
+<p class="msg" id="msg" role="status"></p>
+<div class="kpis" id="kpis"></div>
+<div class="grid">
+<section class="card"><h2>Solicitações por mês</h2><div class="cols" id="mes"></div></section>
+<section class="card"><h2>Situação das solicitações</h2><div class="donut"><div class="ring" id="ring"></div><div class="leg" id="leg"></div></div></section>
+<section class="card"><h2>Por município</h2><div id="mun"></div></section>
+<section class="card"><h2>Por especialidade</h2><div id="esp"></div></section>
+<section class="card"><h2>Conduta do especialista</h2><div id="con"></div></section>
+<section class="card"><h2>Avaliação do solicitante</h2><div id="ava"></div></section>
+<section class="card"><h2>Tempo até a 1ª resposta</h2><div id="tmp"></div></section>
+<section class="card"><h2>Perfil e potencial</h2><div id="per2"></div></section>
+</div>
+<p class="note">Os dados carregados ficam salvos apenas neste navegador e não são enviados a nenhum servidor. Nomes de pacientes e profissionais não são exibidos. Tempo de resposta = da criação à 1ª resposta registrada. Avaliação e conduta só existem para solicitações respondidas e avaliadas.</p>
+</main>
+<script>
+const D=[];
+const mapRow=r=>({d:r[0],m:r[1],e:r[2],s:r[3],c:r[4],a:r[5],sof:r[6],enc:r[7],ok:r[8],t:r[9],h:r[10],u:r[11],id:r[12]});
+const KEY='tele_offline_v1',SRC0='dados originais do relatório';
+let RA=D,SRC=SRC0,R;
+R=RA.map(mapRow);
+let DB=null,CAN=false,STAMP=0,LAST=0;const CH=450;
+async function save(){if(!DB){localStorage.setItem(KEY,JSON.stringify({rows:RA,src:SRC}));return}const ch=[];for(let i=0;i<RA.length;i+=CH)ch.push(RA.slice(i,i+CH));
+const pv=(await DB.doc('meta/current').get()).data(),old=pv?pv.n:0;
+for(let i=0;i<ch.length;i++)await DB.doc('chunks/c'+i).set({rows:ch[i]});
+STAMP=Date.now();await DB.doc('meta/current').set({n:ch.length,src:SRC,total:RA.length,t:STAMP});
+for(let i=ch.length;i<old;i++)await DB.doc('chunks/c'+i).delete()}
+async function pull(d){let rows=[];for(let i=0;i<d.n;i++){const s=await DB.doc('chunks/c'+i).get();if(s.exists)rows=rows.concat(s.data().rows)}
+if(!rows.length)return;RA=rows;SRC=d.src;LAST=d.t;R=RA.map(mapRow);buildOpts();render();setMsg('Fonte: '+SRC+' · '+R.length+' registros. Clique em um município, especialidade ou mês para filtrar.')}
+function persist(t){setMsg(t+' Salvando…');save().then(()=>setMsg(t+' Salvo neste navegador.')).catch(e=>setMsg('Não foi possível salvar: '+(e.message||e.code),1))}
+function setMsg(t,err){const m=$('msg');m.textContent=t;m.className='msg'+(err?' err':'')}
+function dt(d,t){let y,m,dd;if(d instanceof Date){y=d.getFullYear();m=d.getMonth()+1;dd=d.getDate()}else if(typeof d==='string'){const x=d.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(!x)return null;dd=+x[1];m=+x[2];y=+x[3]}else return null;
+let hh=0,mi=0;if(typeof t==='string'){const z=t.match(/(\d{1,2}):(\d{2})/);if(z){hh=+z[1];mi=+z[2]}}else if(t instanceof Date){hh=t.getHours();mi=t.getMinutes()}return new Date(y,m-1,dd,hh,mi)}
+function conv(rows){if(!rows.length||['Dt.Criação','Município Solicitante','Especialidade','Status'].some(k=>!(k in rows[0])))return null;
+const S=s=>s==null||s===''?null:String(s).trim(),T=s=>S(s)&&S(s).toLowerCase().replace(/(^|\s)\S/g,c=>c.toUpperCase());
+return rows.map(r=>{const c=dt(r['Dt.Criação'],r['Hr.Criação']);if(!c)return null;const p=dt(r['Dt.1ª resposta'],r['Hr.1ª resposta']);let h=p?Math.round((p-c)/36e4)/10:null;if(h<0)h=null;
+const iso=c.getFullYear()+'-'+String(c.getMonth()+1).padStart(2,'0')+'-'+String(c.getDate()).padStart(2,'0'),U=s=>S(s)&&S(s).toUpperCase();
+return [iso,T(r['Município Solicitante']),T(r['Especialidade']),S(r['Status']),U(r['Conduta']),S(r['Avaliação']),S(r['Potencial SOF']),S(r['Inten.Encaminhamento']),S(r['Concluída?']),U(r['Tipo Profissional']),h,T(r['Estabelecimento Solicitante']),r['ID']==null?null:Number(r['ID'])]}).filter(Boolean)}
+function load(file,add){if(!file)return;const fr=new FileReader();fr.onerror=()=>setMsg('Não foi possível ler o arquivo.',1);
+fr.onload=e=>{try{const wb=XLSX.read(e.target.result,{type:'array',cellDates:true});const rows=conv(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:null}));
+if(!rows||!rows.length)return setMsg('Colunas não reconhecidas. Use a planilha no mesmo formato do relatório de Teleconsultorias Offline (primeira aba).',1);
+const old=new Set(add?RA.filter(r=>r[12]!=null).map(r=>String(r[12])):[]);const m=new Map();let k=0;
+(add?RA:[]).concat(rows).forEach(r=>m.set(r[12]!=null?String(r[12]):'n'+k++,r));
+const nov=rows.filter(r=>r[12]==null||!old.has(String(r[12]))).length;
+RA=[...m.values()];R=RA.map(mapRow);SRC=add?SRC+' + '+file.name:file.name;buildOpts();render();persist(add?rows.length+' linhas lidas de '+file.name+': '+nov+' novas, '+(rows.length-nov)+' atualizadas. Total: '+R.length+' registros.':'Dados substituídos por '+file.name+': '+R.length+' registros.')}
+catch(err){setMsg('Erro ao ler a planilha: '+err.message,1)}};fr.readAsArrayBuffer(file)}
+const $=id=>document.getElementById(id);
+const MES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const cnt=(a,f)=>{const o={};a.forEach(x=>{const k=f(x);if(k!=null)o[k]=(o[k]||0)+1});return Object.entries(o).sort((x,y)=>y[1]-x[1])};
+const pct=(n,t)=>t?Math.round(n/t*100)+'%':'–';
+const uniq=f=>[...new Set(R.map(f))].sort();
+function opts(el,label,list){el.innerHTML='<option value="">'+label+'</option>'+list.map(v=>'<option value="'+v[0]+'">'+v[1]+'</option>').join('')}
+function buildOpts(){const old=['fm','fe','fp'].map(i=>$(i).value);
+opts($('fm'),'Todos os municípios',uniq(x=>x.m).map(v=>[v,v]));
+opts($('fe'),'Todas as especialidades',uniq(x=>x.e).map(v=>[v,v]));
+opts($('fp'),'Todo o período',uniq(x=>x.d.slice(0,7)).map(v=>[v,MES[+v.slice(5)-1]+'/'+v.slice(0,4)]));
+['fm','fe','fp'].forEach((i,j)=>{$(i).value=old[j]})}
+function bars(id,list,color,key){const el=$(id);if(!list.length){el.innerHTML='<div class="empty">Sem dados no filtro atual.</div>';return}
+const mx=Math.max(1,...list.map(x=>x[1]));
+el.innerHTML=list.map(([k,v],i)=>'<div class="row"'+(key?' data-f="'+key+'" data-v="'+String(k).replace(/"/g,'&quot;')+'" tabindex="0" role="button"':'')+'><span class="n" title="'+k+'">'+k+'</span><span class="t"><i style="width:'+(v/mx*100)+'%;background:'+(Array.isArray(color)?color[i%color.length]:color)+'"></i></span><b>'+v+'</b></div>').join('')}
+function med(a){if(!a.length)return null;a=[...a].sort((x,y)=>x-y);const m=a.length>>1;return a.length%2?a[m]:(a[m-1]+a[m])/2}
+function fh(h){if(h==null)return '–';return h<48?Math.round(h)+' h':(h/24).toFixed(1).replace('.',',')+' dias'}
+function render(){
+const fm=$('fm').value,fe=$('fe').value,fp=$('fp').value;
+const a=R.filter(x=>(!fm||x.m===fm)&&(!fe||x.e===fe)&&(!fp||x.d.startsWith(fp)));
+const n=a.length,resp=a.filter(x=>x.s==='Respondida').length,ok=a.filter(x=>x.ok==='Sim').length;
+const hs=a.map(x=>x.h).filter(h=>h!=null);
+const cc=a.filter(x=>x.c),keep=cc.filter(x=>x.c==='MANTER NA UNIDADE').length;
+const av=a.filter(x=>x.a),mu=av.filter(x=>x.a==='Muito satisfeito').length;
+$('kpis').innerHTML=
+'<div class="k hero"><div class="big">'+(cc.length?pct(keep,cc.length):'–')+'</div><span>dos casos com conduta ficaram resolvidos na própria unidade ('+keep+' de '+cc.length+')</span></div>'+
+'<div class="k"><div class="big">'+n+'</div><span>solicitações</span></div>'+
+'<div class="k"><div class="big">'+pct(resp,n)+'</div><span>respondidas ('+resp+')</span></div>'+
+'<div class="k"><div class="big">'+pct(ok,n)+'</div><span>concluídas ('+ok+')</span></div>'+
+'<div class="k"><div class="big">'+fh(med(hs))+'</div><span>mediana até a 1ª resposta</span></div>'+
+'<div class="k"><div class="big">'+(av.length?pct(mu,av.length):'–')+'</div><span>muito satisfeitos ('+av.length+' avaliações)</span></div>';
+const ds=a.map(x=>x.d).sort();$('per').textContent=n?ds[0].split('-').reverse().join('/')+' a '+ds[n-1].split('-').reverse().join('/'):'sem dados';
+// meses
+const ms=cnt(a,x=>x.d.slice(0,7)).sort((x,y)=>x[0]<y[0]?-1:1),mx=Math.max(1,...ms.map(x=>x[1]));
+$('mes').innerHTML=ms.length?ms.map(([k,v])=>'<div class="col" data-f="fp" data-v="'+k+'" tabindex="0" role="button"><b>'+v+'</b><i style="height:'+(v/mx*78)+'%"></i><small>'+MES[+k.slice(5)-1]+'/'+k.slice(2,4)+'</small></div>').join(''):'<div class="empty">Sem dados no filtro atual.</div>';
+// status
+const st=cnt(a,x=>x.s),cols=['#0f6b6b','#c98a1b','#b5473a','#6a4378'];let ac=0;
+$('ring').style.background=n?'conic-gradient('+st.map(([k,v],i)=>{const s=ac;ac+=v/n*100;return cols[i%4]+' '+s+'% '+ac+'%'}).join(',')+')':'var(--track)';
+$('leg').innerHTML=st.map(([k,v],i)=>'<div><i style="background:'+cols[i%4]+'"></i>'+k+': <b>'+v+'</b> ('+pct(v,n)+')</div>').join('');
+bars('mun',cnt(a,x=>x.m),'var(--a)','fm');
+bars('esp',cnt(a,x=>x.e),'var(--b)','fe');
+bars('con',cnt(a,x=>x.c&&(x.c==='MANTER NA UNIDADE'?'Manter na unidade':'Encaminhar p/ nível secundário')),['var(--a)','var(--c)']);
+bars('ava',cnt(a,x=>x.a),['var(--a)','var(--c)']);
+const b=[['Até 24 h',x=>x<=24],['1 a 3 dias',x=>x>24&&x<=72],['3 a 7 dias',x=>x>72&&x<=168],['Mais de 7 dias',x=>x>168]];
+bars('tmp',b.map(([k,f])=>[k,hs.filter(f).length]),'var(--c)');
+const tp=cnt(a,x=>x.t==='MAIS MEDICOS'?'Mais Médicos':'Profissional de saúde');
+const so=a.filter(x=>x.sof==='Sim').length,ie=a.filter(x=>x.enc==='Sim').length;
+bars('per2',[...tp,['Potencial SOF',so],['Intenção de encaminhar',ie]],['var(--b)','var(--b)','var(--d)','var(--d)']);
+}
+['fm','fe','fp'].forEach(i=>$(i).addEventListener('change',render));
+$('rs').onclick=()=>{['fm','fe','fp'].forEach(i=>$(i).value='');render()};
+$('up').onclick=()=>$('f1').click();$('ad').onclick=()=>$('f2').click();
+$('f1').onchange=e=>{load(e.target.files[0],false);e.target.value=''};
+$('f2').onchange=e=>{load(e.target.files[0],true);e.target.value=''};
+$('rd').onclick=()=>{RA=D;SRC=SRC0;R=RA.map(mapRow);buildOpts();render();persist('Dados removidos.')};
+function pick(t){const s=$(t.dataset.f);s.value=s.value===t.dataset.v?'':t.dataset.v;render()}
+document.addEventListener('click',e=>{const t=e.target.closest('[data-f]');if(t)pick(t)});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){const t=e.target.closest&&e.target.closest('[data-f]');if(t){e.preventDefault();pick(t)}}});
+buildOpts();render();setMsg('Fonte: '+SRC+' · '+R.length+' registros. Clique em um município, especialidade ou mês para filtrar.');
+['up','ad','rd'].forEach(i=>$(i).style.display='none');
+(async()=>{try{DB=await claude.use('db')}catch(e){DB=null}
+if(!DB){['up','ad','rd'].forEach(i=>$(i).style.display='');
+try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s&&s.rows&&s.rows.length){RA=s.rows;SRC=s.src;R=RA.map(mapRow);buildOpts();render();setMsg('Fonte: '+SRC+' · '+R.length+' registros. Clique em um município, especialidade ou mês para filtrar.')}}catch(e){}
+if(!R.length)setMsg('Nenhum dado carregado. Clique em "Substituir dados…" e escolha a planilha de Teleconsultorias Offline.');return}
+try{const u=await claude.use('user');CAN=u?(await u.can('data.write'))!==false:true}catch(e){CAN=true}
+if(CAN)['up','ad','rd'].forEach(i=>$(i).style.display='');
+try{const s=await DB.doc('meta/current').get();if(s.exists)await pull(s.data())}catch(e){}
+try{DB.doc('meta/current').onSnapshot(s=>{const d=s.exists&&s.data();if(d&&d.t!==STAMP&&d.t!==LAST)pull(d)},()=>{})}catch(e){}})();
+</script></body></html>
