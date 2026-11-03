@@ -69,7 +69,7 @@ h2{font-size:17px;margin:0 0 12px}
 <section class="card"><h2>Conduta do especialista</h2><div id="con"></div></section>
 <section class="card"><h2>Avaliação do solicitante</h2><div id="ava"></div></section>
 <section class="card"><h2>Tempo até a 1ª resposta</h2><div id="tmp"></div></section>
-<section class="card wide"><h2>Intenção de encaminhar × encaminhamento de fato</h2><div id="enc"></div><p class="encs" id="encs"></p></section>
+<section class="card wide"><h2>Finalizadas: intenção de encaminhar × encaminhamento de fato</h2><div id="enc"></div><p class="encs" id="encs"></p></section>
 <section class="card"><h2>Perfil e potencial</h2><div id="per2"></div></section>
 </div>
 <p class="note">Ao abrir, a página mostra os dados incluídos no site. Planilhas carregadas ficam salvas só neste navegador; use "Restaurar dados do site" para voltar aos dados incluídos. Nomes de pacientes e profissionais não são exibidos. Tempo de resposta = da criação à 1ª resposta registrada. Avaliação e conduta só existem para solicitações respondidas e avaliadas.</p>
@@ -152,9 +152,9 @@ bars('tmp',b.map(([k,f])=>[k,hs.filter(f).length]),'var(--c)');
 const tp=cnt(a,x=>x.t==='MAIS MEDICOS'?'Mais Médicos':'Profissional de saúde');
 const so=a.filter(x=>x.sof==='Sim').length,ie=a.filter(x=>x.enc==='Sim').length;
 bars('per2',[...tp,['Potencial SOF',so]],['var(--b)','var(--b)','var(--d)']);
-const ci=a.filter(x=>x.enc==='Sim'),si=a.filter(x=>x.enc!=='Sim'),ce=ci.filter(x=>x.c&&x.c!=='MANTER NA UNIDADE').length,ck=ci.filter(x=>x.c==='MANTER NA UNIDADE').length,cp=ci.length-ce-ck;
-bars('enc',[['Com intenção de encaminhar',ci.length],['→ Encaminhadas de fato',ce],['→ Mantidas na unidade',ck],['→ Sem conduta registrada',cp],['Sem intenção de encaminhar',si.length]],['var(--b)','var(--d)','var(--a)','var(--c)','var(--mut)']);
-$('encs').innerHTML=ci.length?'<b>'+ci.length+'</b> de '+n+' solicitações ('+pct(ci.length,n)+') tinham intenção de encaminhar. Entre as <b>'+(ce+ck)+'</b> que já têm conduta, <b>'+ce+'</b> foram encaminhadas ('+pct(ce,ce+ck)+') e <b>'+ck+'</b> ficaram na unidade ('+pct(ck,ce+ck)+'); <b>'+cp+'</b> ainda estão sem conduta.':'Nenhuma solicitação com intenção de encaminhar no filtro atual.';
+const fz=a.filter(x=>x.ok==='Sim'),isE=x=>x.c&&x.c!=='MANTER NA UNIDADE',ci=fz.filter(x=>x.enc==='Sim'),si=fz.filter(x=>x.enc!=='Sim'),ce=ci.filter(isE).length,ck=ci.filter(x=>x.c==='MANTER NA UNIDADE').length,cp=ci.length-ce-ck,se=si.filter(isE).length;
+bars('enc',[['Solicitações finalizadas',fz.length],['Com intenção de encaminhar',ci.length],['→ Encaminhadas de fato',ce],['→ Mantidas na unidade',ck],['Sem intenção de encaminhar',si.length]],['var(--mut)','var(--b)','var(--d)','var(--a)','var(--mut)']);
+$('encs').innerHTML=fz.length?'Das <b>'+fz.length+'</b> solicitações finalizadas, <b>'+ci.length+'</b> ('+pct(ci.length,fz.length)+') tinham intenção de encaminhar. Dessas, <b>'+ce+'</b> foram encaminhadas de fato ('+pct(ce,ci.length)+') e <b>'+ck+'</b> ficaram na unidade ('+pct(ck,ci.length)+')'+(cp?'; '+cp+' sem conduta registrada':'')+'. Entre as <b>'+si.length+'</b> sem intenção, <b>'+se+'</b> foram encaminhadas.':'Nenhuma solicitação finalizada no filtro atual.';
 }
 ['fm','fe','fp'].forEach(i=>$(i).addEventListener('change',render));
 $('rs').onclick=()=>{['fm','fe','fp'].forEach(i=>$(i).value='');render()};
